@@ -1,4 +1,5 @@
 import openai
+import base64  
 import streamlit as st
 import sounddevice as sd
 import numpy as np
@@ -9,7 +10,7 @@ import time
 import re
 
 # OpenAI API Key
-openai.api_key = "api_key_here"  # 🔹 Replace with your actual OpenAI API key
+openai.api_key = "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"  # 🔹 Replace with your actual OpenAI API key
 
 # Audio queue for real-time recording
 q = queue.Queue()
@@ -117,7 +118,7 @@ def transcribe_audio_whisper_api(audio_path):
 
 # ✅ Define Whisper TTS function
 def whisper_tts(text):
-    """Convert chatbot response to speech using OpenAI's TTS API"""
+    """Convert chatbot response to speech using OpenAI's TTS API with a 1-second delay and autoplay."""
     response = openai.audio.speech.create(
         model="tts-1",
         voice="alloy",  # Choose from: alloy, nova, shimmer, echo
@@ -129,7 +130,29 @@ def whisper_tts(text):
     with open(audio_path, "wb") as audio_file:
         audio_file.write(response.content)
 
+    # ⏳ Add a 1-second delay before playing
+    time.sleep(1)
+
     return audio_path
+
+# ✅ Function to autoplay audio in Streamlit
+def autoplay_audio(audio_path):
+    """Plays audio automatically in Streamlit."""
+    # Read the audio file
+    with open(audio_path, "rb") as audio_file:
+        audio_bytes = audio_file.read()
+
+    # Encode audio to base64
+    encoded_audio = base64.b64encode(audio_bytes).decode()
+
+    # Create HTML for autoplay
+    audio_html = f"""
+    <audio autoplay>
+        <source src="data:audio/mp3;base64,{encoded_audio}" type="audio/mp3">
+    </audio>
+    """
+    # Display autoplay audio in Streamlit using HTML
+    st.markdown(audio_html, unsafe_allow_html=True)
 
 # Collect personal information
 if "user_info" not in st.session_state:
@@ -139,6 +162,7 @@ if "custom_prompts" not in st.session_state:
 
 st.title("🗣️ 맞춤형 한국어 회화 튜터")
 
+
 # **Step 1: User Info Collection**
 if st.session_state.user_info is None:
     st.write("### 📋 한국어 대화를 개인 맞춤형으로 설정하기 위해 정보를 입력해주세요.")
@@ -146,6 +170,28 @@ if st.session_state.user_info is None:
     with st.form("user_info_form"):
         name = st.text_input("이름")
         nationality = st.text_input("국적")
+        native_language = st.text_input("모국어")
+        
+        residence_status = st.radio("대한민국 체류/거주 여부", ["네", "아니요"])
+
+        # ✅ If "네" is selected, ask about visa details
+        if residence_status == "네":
+            stay_duration = st.text_input("한국 체류기간 (예: 1년, 6개월)")
+
+            # ✅ Visa Type Dropdown
+            visa_options = ["C4", "D2", "D3", "D4", "D10", "E4", "E7", "E8", "E9",
+                            "H2", "F1", "F2", "F3", "F4", "F6", "G1", "기타(직접입력)"]
+
+            visa_type = st.selectbox("비자 종류를 선택하세요:", visa_options)
+
+            # ✅ If "기타(직접입력)" is selected, allow manual input
+            if visa_type == "기타(직접입력)":
+                visa_type = st.text_input("비자 종류를 직접 입력하세요:")
+        else:
+            stay_duration = "해당 없음"
+            visa_type = "해당 없음"
+
+        industry = st.text_input("산업 분야 (예: IT, 교육, 의료 등)")
         work_experience = st.text_input("위 산업 분야 근무 기간")
         korean_test_score = st.text_input("한국어 시험 점수 (본 적 없으면 공란)")
         korean_study_duration = st.text_input("한국어 공부 기간 (예: 2년)")
@@ -160,6 +206,11 @@ if st.session_state.user_info is None:
         st.session_state.user_info = {
             "이름": name,
             "국적": nationality,
+            "모국어": native_language,
+            "대한민국 체류 여부": residence_status,
+            "체류 기간": stay_duration,
+            "비자 종류": visa_type,
+            "산업 분야": industry,
             "근무 기간": work_experience,
             "한국어 시험 점수": korean_test_score,
             "한국어 공부 기간": korean_study_duration,
@@ -211,7 +262,11 @@ if st.session_state.custom_prompts:
 
     if st.button("🔄 대화 시작하기"):
         st.session_state.conversation_history = [
-            {"role": "system", "content": "챗봇에게 무슨 역할로 롤플레잉할지."},
+            {"role": "system", "content": "당신은 친절한 한국어 대화 파트너입니다. "
+                                          "실제 생활에서 자연스럽게 대화를 나누듯이 응답하세요. "
+                                          "너무 형식적인 문어체가 아닌 구어체로 대답하세요. "
+                                          "사용자가 대화에 참여하도록 격려하세요. "
+                                          "답변은 2~3문장으로 짧고 명확하게 하세요."},
             {"role": "assistant", "content": prompts[selected_prompt]}
         ]
         st.session_state.response_count = 0
@@ -226,9 +281,10 @@ if st.session_state.chat_active:
             st.markdown(f"👤 **You:** {msg['content']}")
         elif msg["role"] == "assistant":
             st.markdown(f"🤖 **Chatbot:** {msg['content']}")
-            if st.button(f"🔊 {msg['content'][:10]}...", key=msg["content"]):  # Short label for button
-                tts_audio = whisper_tts(msg["content"])
-                st.audio(tts_audio, format="audio/mp3")
+            
+            # 🔄 Autoplay the response with delay
+            tts_audio = whisper_tts(msg["content"])
+            autoplay_audio(tts_audio)
 
     st.write(f"⏳ **진행 상황:** {st.session_state.response_count + 1} / 5 회")
 
