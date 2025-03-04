@@ -10,7 +10,7 @@ import time
 import re
 
 # OpenAI API Key
-openai.api_key = "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"  # 🔹 Replace with your actual OpenAI API key
+openai.api_key = ""  # 🔹 Replace with your actual OpenAI API key
 
 # Audio queue for real-time recording
 q = queue.Queue()
