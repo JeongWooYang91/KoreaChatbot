@@ -9,10 +9,31 @@ import wave
 import time
 import re
 import os
+from dotenv import load_dotenv  # ✅ Import dotenv
 
+# ✅ Load environment variables from .env file
+load_dotenv()
 
-# OpenAI API Key
-openai.api_key = ""  # 🔹 Replace with your actual OpenAI API key
+# ✅ Get API keys and secrets
+openai.api_key = os.getenv("OPENAI_API_KEY")
+prompt_text = os.getenv("AI_PROMPT_TEXT")
+korean_profanity_list = os.getenv("KOREAN_PROFANITY", "").split(",")
+
+# ✅ Debugging: Check if secrets are loaded
+if openai.api_key:
+    print("✅ API Key loaded successfully.")
+else:
+    print("❌ Failed to load API Key!")
+
+if prompt_text:
+    print("✅ Prompt text loaded successfully.")
+else:
+    print("❌ Failed to load prompt text!")
+
+if korean_profanity_list:
+    print("✅ Profanity list loaded successfully.")
+else:
+    print("❌ Failed to load profanity list!")
 
 # Audio queue for real-time recording
 q = queue.Queue()
@@ -44,12 +65,7 @@ def callback(indata, frames, time, status):
 # ✅ Define OpenAI Moderation API function
 def check_profanity(text):
     """Check for inappropriate content using a custom Korean profanity list & OpenAI Moderation API."""
-    
-    # ✅ Custom list of Korean curse words & derogatory expressions
-    korean_profanity_list = [
-        "그렇게 좋지 않은 내용들이니 욕설은 일단 필터."
-    ]
-    
+       
     # ✅ Check for Korean curse words first
     flagged_words = [word for word in korean_profanity_list if word in text]
 
@@ -226,18 +242,7 @@ if st.session_state.user_info and st.session_state.custom_prompts is None:
     st.write("🤖 개인 맞춤형 대화 주제를 생성 중...")
 
     user_info_text = "\n".join([f"{k}: {v}" for k, v in st.session_state.user_info.items()])
-    prompt_text = f"""
-    사용자의 개인 정보를 기반으로 한국어 연습을 위한 맞춤형 대화 주제를 2개 생성하세요. 
-    사용자는 다음 정보를 입력했습니다:
-    {user_info_text}
-    예시 주제 형식: 
-    - "한국에서 직장 생활에 대해 이야기하기"
-    - "한국어 공부하면서 어려운 점 공유하기"
-    대화 주제는 한국에서의 경험이나 관심사와 관련된 것이어야 합니다.
-    두 주제 중 하나는 사적인 주제 (취미, 관심사 등), 다른거 하나는 직장에서 일어날 수 있는 상황으로 (상사에게 보고하기, 고객에게 어려운 내용 설명하기 등) 설정해 주세요.
-    주제 이름은 너무 길지 않게 1문장정도로 생성하세요.
-    """
-
+    
     response = openai.chat.completions.create(
         model="gpt-4-turbo",
         messages=[{"role": "system", "content": prompt_text}]
