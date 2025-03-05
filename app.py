@@ -8,6 +8,8 @@ import tempfile
 import wave
 import time
 import re
+import os
+
 
 # OpenAI API Key
 openai.api_key = ""  # 🔹 Replace with your actual OpenAI API key
