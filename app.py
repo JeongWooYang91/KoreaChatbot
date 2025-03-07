@@ -10,6 +10,10 @@ import time
 import re
 import os
 from dotenv import load_dotenv  # ✅ Import dotenv
+from pydub import AudioSegment
+from audiorecorder import audiorecorder
+import sounddevice as sd
+import queue
 
 # ✅ Load environment variables from .env file
 load_dotenv()
@@ -108,22 +112,30 @@ def chatbot_response(conversation_history):
     print("🤖 GPT-4 Response:", chatbot_reply)  # Debugging
     return chatbot_reply
 
-def record_audio(duration=18, samplerate=16000):
-    """Records audio from the microphone and saves it as a WAV file"""
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
-        filename = tmpfile.name
-        with wave.open(filename, 'wb') as wf:
-            wf.setnchannels(1)  # Mono channel
-            wf.setsampwidth(2)  # 16-bit audio
-            wf.setframerate(samplerate)
-
-            print("Recording...")
-            with sd.InputStream(callback=callback, samplerate=samplerate, channels=1, dtype="int16"):
-                for _ in range(int(samplerate / 1024 * duration)):
-                    wf.writeframes(q.get())
-
-            print("Recording complete.")
-    return filename
+def record_audio():
+    """Records audio using streamlit-audiorecorder and saves it as a WAV file."""
+    st.write("🎙️ **녹음 시작! (15초 동안 자동으로 녹음됩니다)**")
+    
+    # 🎙️ Start recording immediately
+    audio = audiorecorder()
+    
+    # ✅ If recorded audio is available
+    if audio is not None and len(audio.tobytes()) > 0:
+        st.write("✅ **녹음 완료!** 텍스트 변환 중...")
+        st.audio(audio.tobytes(), format="audio/wav")  # Play recorded audio
+        
+        # ✅ Save recorded audio as a temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+            tmpfile_path = tmpfile.name
+            
+            # ✅ Convert recorded data to WAV format using PyDub
+            audio_segment = AudioSegment.from_raw(io.BytesIO(audio.tobytes()), sample_width=2, frame_rate=44100, channels=2)
+            audio_segment.export(tmpfile_path, format="wav")
+            
+            return tmpfile_path  # ✅ Return saved file path
+    
+    st.error("🚨 **Recording Failed!** No audio captured.")
+    return None  # Return None if recording fails
 
 def transcribe_audio_whisper_api(audio_path):
     """Send audio file to OpenAI Whisper API and return transcribed text"""
