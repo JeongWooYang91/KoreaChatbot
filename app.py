@@ -1,7 +1,6 @@
 import openai
 import base64  
 import streamlit as st
-import sounddevice as sd
 import numpy as np
 import queue
 import tempfile
@@ -12,8 +11,6 @@ import os
 from dotenv import load_dotenv  # ✅ Import dotenv
 from pydub import AudioSegment
 from audiorecorder import audiorecorder
-import sounddevice as sd
-import queue
 
 # ✅ Load environment variables from .env file
 load_dotenv()
