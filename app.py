@@ -11,6 +11,7 @@ import os
 from dotenv import load_dotenv  # ✅ Import dotenv
 from pydub import AudioSegment
 from audiorecorder import audiorecorder
+import io
 
 # ✅ Load environment variables from .env file
 load_dotenv()
@@ -117,16 +118,16 @@ def record_audio():
     audio = audiorecorder()
     
     # ✅ If recorded audio is available
-    if audio is not None and len(audio.tobytes()) > 0:
+    if audio is not None and len(audio.raw_data) > 0:
         st.write("✅ **녹음 완료!** 텍스트 변환 중...")
-        st.audio(audio.tobytes(), format="audio/wav")  # Play recorded audio
+        st.audio(audio.raw_data, format="audio/wav")  # Play recorded audio
         
         # ✅ Save recorded audio as a temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
             tmpfile_path = tmpfile.name
             
             # ✅ Convert recorded data to WAV format using PyDub
-            audio_segment = AudioSegment.from_raw(io.BytesIO(audio.tobytes()), sample_width=2, frame_rate=44100, channels=2)
+            audio_segment = AudioSegment.from_raw(io.BytesIO(audio.raw_data), sample_width=2, frame_rate=44100, channels=2)
             audio_segment.export(tmpfile_path, format="wav")
             
             return tmpfile_path  # ✅ Return saved file path
