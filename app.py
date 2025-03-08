@@ -117,7 +117,7 @@ def record_audio():
     audio = audiorecorder()
     
     # ✅ If recorded audio is available
-    if audio is not None and len(audio) > 0:
+    if audio is not None and len(audio.tobytes()) > 0:
         st.write("✅ **녹음 완료!** 텍스트 변환 중...")
         st.audio(audio.tobytes(), format="audio/wav")  # Play recorded audio
         
@@ -126,10 +126,12 @@ def record_audio():
             tmpfile_path = tmpfile.name
             
             # ✅ Convert recorded data to WAV format using PyDub
-            audio_segment = AudioSegment.from_raw(io.BytesIO(audio.raw_data), sample_width=2, frame_rate=44100, channels=2)
+            audio_segment = AudioSegment.from_raw(io.BytesIO(audio.tobytes()), sample_width=2, frame_rate=44100, channels=2)
             audio_segment.export(tmpfile_path, format="wav")
             
             return tmpfile_path  # ✅ Return saved file path
+
+
     
     st.error("🚨 **Recording Failed!** No audio captured.")
     return None  # Return None if recording fails
@@ -307,10 +309,24 @@ if st.session_state.chat_active:
     if st.session_state.response_count < 5:
         if st.button("🎙️ 음성 녹음 시작 (15초)"):
             with st.spinner("🎤 녹음 중... 15초 동안 말해주세요."):
-                recorded_audio_path = record_audio()  # Replace with actual recording function
+                recorded_audio_path = None
+                while recorded_audio_path is None:
+                    recorded_audio_path = record_audio()
+
+                    if recorded_audio_path is None:
+                        if st.button("🔄 다시 녹음하기"):
+                            st.write("🔄 **녹음을 다시 시도합니다...**")
+                            recorded_audio_path = record_audio()  # Try recording again
+                        else:
+                            st.stop()  # Stop execution if user doesn't want to retry
 
             st.write("📡 텍스트로 변환 중...")
-            korean_text = transcribe_audio_whisper_api(recorded_audio_path)
+            if recorded_audio_path:
+                korean_text = transcribe_audio_whisper_api(recorded_audio_path)
+            else:
+                st.error("🚨 **Recording Failed!** No valid audio file found.")
+                st.stop()
+            
 
             # 🚨 Check for profanity & get flagged categories and words
             flagged, flagged_categories, flagged_words = check_profanity(korean_text)
