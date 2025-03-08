@@ -117,7 +117,7 @@ def record_audio():
     audio = audiorecorder()
     
     # ✅ If recorded audio is available
-    if audio is not None and len(audio.tobytes()) > 0:
+    if audio is not None and len(audio) > 0:
         st.write("✅ **녹음 완료!** 텍스트 변환 중...")
         st.audio(audio.tobytes(), format="audio/wav")  # Play recorded audio
         
@@ -126,7 +126,7 @@ def record_audio():
             tmpfile_path = tmpfile.name
             
             # ✅ Convert recorded data to WAV format using PyDub
-            audio_segment = AudioSegment.from_raw(io.BytesIO(audio.tobytes()), sample_width=2, frame_rate=44100, channels=2)
+            audio_segment = AudioSegment.from_raw(io.BytesIO(audio.raw_data), sample_width=2, frame_rate=44100, channels=2)
             audio_segment.export(tmpfile_path, format="wav")
             
             return tmpfile_path  # ✅ Return saved file path
