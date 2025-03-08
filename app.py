@@ -166,31 +166,38 @@ def whisper_tts(text):
     return audio_path
 
 # ✅ Function to autoplay audio in Streamlit
-def autoplay_audio(audio_path):
-    """Plays audio automatically in Streamlit."""
-    # Read the audio file
-    with open(audio_path, "rb") as audio_file:
-        audio_bytes = audio_file.read()
+def record_audio():
+    """Automatically records audio for 15 seconds when the button is pressed."""
 
-    # Encode audio to base64
-    encoded_audio = base64.b64encode(audio_bytes).decode()
+    st.write("🎙️ **녹음 시작! (15초 동안 자동으로 녹음됩니다)**")
+    
+    # 🎙️ Start recording immediately
+    audio = audiorecorder("녹음 중... ⏳ (자동 15초 후 종료)", "🎤 녹음 종료")
 
-    # Create HTML for autoplay
-    audio_html = f"""
-    <audio autoplay>
-        <source src="data:audio/mp3;base64,{encoded_audio}" type="audio/mp3">
-    </audio>
-    """
-    # Display autoplay audio in Streamlit using HTML
-    st.markdown(audio_html, unsafe_allow_html=True)
+    # ✅ Wait for 15 seconds to capture full recording
+    time.sleep(15)
 
-# Collect personal information
-if "user_info" not in st.session_state:
-    st.session_state.user_info = None
-if "custom_prompts" not in st.session_state:
-    st.session_state.custom_prompts = None
+    # ✅ If recorded audio is available
+    if audio and len(audio) > 0:
+        st.write("✅ **녹음 완료!** 텍스트 변환 중...")
+        st.audio(audio.export().read(), format="audio/wav")  # Play recorded audio
+        
+        # ✅ Save recorded audio as a temp file
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+                tmpfile_path = tmpfile.name
+                
+                # ✅ Convert recorded data to WAV format using PyDub
+                audio_segment = AudioSegment.from_file(audio.export(), format="wav")
+                audio_segment.export(tmpfile_path, format="wav")
 
-st.title("🗣️ 맞춤형 한국어 회화 튜터")
+                return tmpfile_path  # ✅ Return saved file path
+        except Exception as e:
+            st.error(f"🚨 **Audio Save Error:** {e}")
+            return None
+    
+    st.error("🚨 **Recording Failed!** No audio captured.")
+    return None  # Return None if recording fails
 
 
 # **Step 1: User Info Collection**
