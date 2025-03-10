@@ -85,6 +85,25 @@ def check_profanity(text):
         return True, flagged_categories, flagged_words  # ✅ Return flagged status, categories, & detected words
     else:
         return False, [], []  # ✅ No flagged words detected
+    
+# ✅ Function to autoplay audio in Streamlit
+def autoplay_audio(audio_path):
+    """Plays audio automatically in Streamlit."""
+    # Read the audio file
+    with open(audio_path, "rb") as audio_file:
+        audio_bytes = audio_file.read()
+
+    # Encode audio to base64
+    encoded_audio = base64.b64encode(audio_bytes).decode()
+
+    # Create HTML for autoplay
+    audio_html = f"""
+    <audio autoplay>
+        <source src="data:audio/mp3;base64,{encoded_audio}" type="audio/mp3">
+    </audio>
+    """
+    # Display autoplay audio in Streamlit using HTML
+    st.markdown(audio_html, unsafe_allow_html=True)
 
 # ✅ Define alternative response suggestion
 def suggest_better_response(user_input):
