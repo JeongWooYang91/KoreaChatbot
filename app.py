@@ -18,7 +18,7 @@ load_dotenv()
 
 # ✅ Get API keys and secrets
 openai.api_key = os.getenv("OPENAI_API_KEY")
-prompt_text = os.getenv("AI_PROMPT_TEXT")
+# prompt_text = os.getenv("AI_PROMPT_TEXT")
 korean_profanity_list = os.getenv("KOREAN_PROFANITY", "").split(",")
 
 if "audio_files" not in st.session_state:
@@ -30,10 +30,10 @@ if openai.api_key:
 else:
     print("❌ Failed to load API Key!")
 
-if prompt_text:
-    print("✅ Prompt text loaded successfully.")
-else:
-    print("❌ Failed to load prompt text!")
+# if prompt_text:
+#    print("✅ Prompt text loaded successfully.")
+#else:
+#    print("❌ Failed to load prompt text!")
 
 if korean_profanity_list:
     print("✅ Profanity list loaded successfully.")
@@ -162,19 +162,25 @@ def autoplay_audio(audio_path):
     # Display autoplay audio in Streamlit using HTML
     st.markdown(audio_html, unsafe_allow_html=True)
 
-
 def whisper_tts(text):
     """Convert chatbot response to speech using OpenAI's TTS API with a 1-second delay and autoplay."""
     
-    # Extract only Korean text using regex
+    # Print original text for debugging
+    print("🛠️ Original Text:", text)
+    
+    # Extract only Korean text using improved regex
     korean_only_text = re.sub(r"[a-zA-Z0-9\(\)\:\.\,\-]", "", text).strip()
+    # Remove consecutive duplicate sentences
+    korean_only_text = re.sub(r"(.*?)(\1)+", r"\1", korean_only_text).strip()
+    print("🛠️ Cleaned Korean Text:", korean_only_text)
     
     # Ensure non-empty Korean text is passed to TTS
     if korean_only_text:
+        print("📨 Calling TTS API with text:", korean_only_text)
         response = openai.audio.speech.create(
             model="tts-1",
-            voice="alloy",  # Choose from: alloy, nova, shimmer, echo
-            input=korean_only_text  # Use only Korean text for TTS
+            voice="alloy",
+            input=korean_only_text  # Use only cleaned Korean text for TTS
         )
         
         # Save the audio response
@@ -182,12 +188,11 @@ def whisper_tts(text):
         with open(audio_path, "wb") as audio_file:
             audio_file.write(response.content)
 
-        # 🔄 Save the path to session state for persistent display
+        # Save the path to session state for persistent display
         st.session_state.audio_files.append(audio_path)
 
-        # ⏳ Keep the 1-second delay before returning the audio path
+        # ⏳ Delay before returning the audio path
         time.sleep(1)
-
         return audio_path
     else:
         print("🚨 No Korean text found for TTS!")
@@ -259,12 +264,14 @@ if st.session_state.user_info and st.session_state.custom_prompts is None:
 
     user_info_text = "\n".join([f"{k}: {v}" for k, v in st.session_state.user_info.items()])
     prompt_text = f"""
-    사용자의 개인 정보를 기반으로 한국어와 영어로 대화 주제를 작성해 주세요. 
-    예시 : 상사에게 프로젝트 상황 보고하기 / Reporting project status to the boss.
+    Based on the user's information, build 2 coversation topics - one personal and one professional.
+    사용자가 제공한 정보:
+    {user_info_text}
+    Make the title in a Korean / English format in one sentence. Example : 상사에게 프로젝트 상황 보고하기 / Reporting project status to the boss.
     와 해당 주제에 대한 대화 시작 문장을 작성해 주세요.
     
     첫 번째는 사적인 이야기(취미, 관심사 등), 두번째 대화는 공적인 상황 (직장에서 보고한다던가 등)으로 설정해주세요.
-    대화 주제는 한국에서 겪을 가능성이 높은 일상적인 상황이어야 합니다.
+    대화 주제는 한국에서 겪을 가능성이 높은 일상적인 상황이어야 합니다. 직장 상황에서는 유저가 팀메이트나나 아랫사람이라고 가정해주세요.
 
     📌 **예시 (출력 형식)**
     - "K드라마 종영 후 의견 나누기:  지난주까지 재밌는 드라마 봤는데, 종영해서 너무 아쉽다."
@@ -277,10 +284,6 @@ if st.session_state.user_info and st.session_state.custom_prompts is None:
     - 첫 번째 문장은 대화를 시작하는 자연스러운 한국어 표현이어야 합니다.
     - 너무 형식적인 문어체가 아닌, 실제 대화에서 쓰일 수 있는 구어체로 작성해 주세요.
 
-    사용자가 제공한 정보:
-    {user_info_text}
-
-    위 조건을 따라 두 개의 대화 주제 그 대화들을 각각 위한 시작 문장을 생성하세요.
     """
 
     response = openai.chat.completions.create(
@@ -312,7 +315,7 @@ if st.session_state.user_info and st.session_state.custom_prompts is None:
 
 # **Step 3: Select Conversation Topic**
 if st.session_state.custom_prompts and st.session_state.prompt_starters:
-    st.write("🎯 **대화 주제를 선택하세요**:")
+    st.write("🎯 **Select Conversation topic**:")
 
     # ✅ Predefined prompts with corresponding opening sentences
     predefined_prompts = {
@@ -331,9 +334,9 @@ if st.session_state.custom_prompts and st.session_state.prompt_starters:
     prompts = {**predefined_prompts, **ai_prompts}
 
     # ✅ User selects a topic
-    selected_prompt = st.selectbox("대화를 시작할 주제를 선택하세요:", list(prompts.keys()))
+    selected_prompt = st.selectbox("Select a conversation topic:", list(prompts.keys()))
 
-    if st.button("🔄 대화 시작하기"):
+    if st.button("🔄 Start conversation"):
         #st.write(f"🎯 **Selected Prompt:** {selected_prompt}")
 
         # ✅ Get chatbot's first response (opening sentence)
@@ -343,21 +346,26 @@ if st.session_state.custom_prompts and st.session_state.prompt_starters:
 
         # ✅ Store conversation history
         st.session_state.conversation_history = [
-            {"role": "system", "content": "당신은 친절한 한국어 대화 파트너입니다. "
-                                          "실제 생활에서 자연스럽게 대화를 나누듯이 응답하세요. "
-                                          "너무 형식적인 문어체가 아닌 구어체로 대답하세요. "
-                                          "사용자가 대화에 참여하도록 격려하세요. "
-                                          "답변은 2~3문장으로 짧고 명확하게 하세요."\
-                                          "항상 존중하듯이 존댓말로 하세요."
-                                          "답변을 해 주신 뒤에는 영어로 한국어 phonetic과 뜻을 적어 주세요."},
-            {"role": "assistant", "content": chatbot_opening}
-        ]
+    {"role": "system", "content": "당신은 친절한 한국어 대화 파트너입니다. "
+                                  "실제 생활에서 자연스럽게 대화를 나누듯이 응답하세요. "
+                                  "너무 형식적인 문어체가 아닌 구어체로 대답하세요. "
+                                  "사용자가 대화에 참여하도록 격려하세요. "
+                                  "답변은 2~3문장으로 짧고 명확하게 하세요. "
+                                  "항상 존중하듯이 존댓말로 하세요. "
+                                  "직장 생활 상황에서는 상사라고 가정하세요"
+                                  "After your Korean reply, write the English translation and the Romanized Korean phonetic pronunciation (in English letters) for the user's benefit. "
+                                  "Use this format with separate lines:\n"
+                                  "Korean: [Your Korean response]\n"
+                                  "English: [English translation]\n"
+                                  "Phonetic: [Romanized Korean pronunciation]"}
+]
 
 
         # ✅ Ensure GPT response is fully received before TTS
         if chatbot_opening:
             # ⏳ Add a delay to ensure GPT's response is fully processed
             time.sleep(1)  # Delay to make sure GPT response is fully received
+            st.session_state.conversation_history.append({"role": "assistant", "content": chatbot_opening})
 
             # ✅ Generate TTS audio after delay
             tts_audio = whisper_tts(chatbot_opening)
@@ -377,7 +385,7 @@ if st.session_state.custom_prompts and st.session_state.prompt_starters:
 
 # **Step 4: Conversation Mode **
 if st.session_state.chat_active:
-    st.write("💬 **대화 기록**:")
+    st.write("💬 **Chat Record**:")
 
     # ✅ Print all session state for debugging
     print("🛠️ Current session_state:", dict(st.session_state))
@@ -405,7 +413,7 @@ if st.session_state.chat_active:
                     # ✅ Store the last played message to prevent replaying
                     st.session_state.last_played_message = msg["content"]
 
-    st.write(f"⏳ **진행 상황:** {st.session_state.get('response_count', 0) + 1} / 5 회")
+    st.write(f"⏳ **Chat Progress:** {st.session_state.get('response_count', 0) + 1} / 5 회")
 
     if st.session_state.response_count < 5:
         if st.button("🎙️ 음성 녹음 시작 (15초)"):
@@ -464,12 +472,12 @@ if st.session_state.chat_active:
                     st.rerun()
 
             # ✅ Debugging: Ensure count updates correctly
-            st.write(f"🧮 **현재 대화 횟수:** {st.session_state.response_count} / 5")
+            st.write(f"🧮 **Chat progress:** {st.session_state.response_count} / 5")
         else:
             print("🛠️ '음성 녹음 시작' 버튼이 클릭되지 않음.")  # Debug print for button click check
     else:
-        st.write("🎉 **대화가 끝났어요! 5번의 대화를 완료했습니다.**")
-        st.write("🎧 **저장된 음성 파일들:**")
+        st.write("🎉 **Congratulations! You've completed all 5 dialogues!.**")
+        st.write("🎧 **The chatbot's responses:**")
         print("🛠️ End of Conversation Block Reached - Displaying New Conversation Button")
 
     for i, audio_path in enumerate(st.session_state.audio_files, start=1):
@@ -477,7 +485,7 @@ if st.session_state.chat_active:
         st.write(f"🔊 **응답 {i}의 음성 파일:**")
 
     # ✅ Ensure the button appears here
-    if st.button("🔄 새로운 대화 시작하기"):
+    if st.button("🔄 Start new conversation"):
         print("🛠️ '새로운 대화 시작하기' 버튼 클릭됨!")  # Debug print for button click
         st.session_state.chat_active = False
         st.session_state.response_count = 0
