@@ -136,7 +136,8 @@ def transcribe_audio_whisper_api(audio_path):
     with open(audio_path, "rb") as audio_file:
         response = openai.audio.transcriptions.create(
             model="whisper-1",
-            file=audio_file
+            file=audio_file,
+            language="ko"
         )
     return response.text
 
