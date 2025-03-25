@@ -1,0 +1,33 @@
+# node_modules - 패키지 의존성
+node_modules/
+
+# Vite 빌드 결과
+dist/
+
+# 환경 변수 파일
+.env
+.env.*
+
+# 운영 체제별 쓰레기 파일
+.DS_Store
+Thumbs.db
+
+# IDE 및 에디터 설정 파일
+.vscode/
+.idea/
+*.sw?
+
+# 로그 파일
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# macOS, Windows 시스템 파일
+*.log
+*.tmp
+
+# local history (일부 IDE용)
+.localhistory/
+
+# package-lock
+package-lock.json
