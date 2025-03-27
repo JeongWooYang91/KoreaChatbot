@@ -2,13 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from models import ChatRequest, ScenarioRequest
 from gpt_utils import generate_scenarios, generate_chat_response
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 # Allow frontend connection
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # frontend origin
+    allow_origins=["http://localhost:5173"],  # frontend origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

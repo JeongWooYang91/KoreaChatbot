@@ -22,6 +22,8 @@ const UserInfoForm = () => {
     agree: true,
   });
 
+
+
   const navigate = useNavigate();
   const { setUserInfo } = useUser();
 
@@ -36,26 +38,31 @@ const UserInfoForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.agree) return;
-
+  
+    // Safely determine visa type
+    const visaType = form.visaType === "Others" ? form.customVisa : form.visaType;
+  
     const userInfo = {
       Name: form.name,
       Nationality: form.nationality,
       NativeLanguage: form.nativeLanguage,
-      "Living in Korea": form.livingInKorea,
-      "Duration of Stay": form.livingInKorea === "Yes" ? form.stayDuration : "n/a",
-      "Visa Type": form.visaType === "Others" ? form.customVisa : form.visaType,
+      Living_in_Korea: form.livingInKorea,
+      Duration_of_Stay: form.livingInKorea === "Yes" ? form.stayDuration : "n/a",
+      Visa_Type: visaType,
       Industry: form.industry,
-      "Work Experience": form.workExperience,
-      "Korean Test Score": form.koreanTestScore,
-      "Duration of Korean Study": form.koreanStudyDuration,
+      Work_Experience: form.workExperience,
+      Korean_Test_Score: form.koreanTestScore,
+      Duration_of_Korean_Study: form.koreanStudyDuration,
       Interests: form.interests,
       Hobbies: form.hobbies,
     };
-
+  
+    console.log("User Info Submitted:", userInfo); // 🔍 This should now appear
+  
     setUserInfo(userInfo);
     navigate("/scenarios");
   };
-
+  
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-3"><input className="form-control" name="name" placeholder="Name" value={form.name} onChange={handleChange} /></div>
