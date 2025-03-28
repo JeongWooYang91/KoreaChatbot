@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from models import ChatRequest, ScenarioRequest
 from gpt_utils import generate_scenarios, generate_chat_response
@@ -15,9 +16,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 @app.post("/scenarios")
-async def get_scenarios(payload: ScenarioRequest):
-    return {"scenarios": generate_scenarios(payload.dict())}
+async def get_scenarios(request: Request):
+    body = await request.json()
+    print("🔍 Incoming JSON Payload:", body)
+
+    scenarios = generate_scenarios(body)  # ✅ this is a list of dicts
+
+    # Just return it directly — FastAPI will serialize to JSON
+    return {"scenarios": scenarios}
 
 @app.post("/chat")
 async def chat(payload: ChatRequest):
