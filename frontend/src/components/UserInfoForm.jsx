@@ -4,7 +4,7 @@ import { useUser } from "../context/UserContext";
 
 const visaOptions = ["C4", "D2", "D3", "D4", "D10", "E4", "E7", "E8", "E9", "H2", "F1", "F2", "F3", "F4", "F6", "G1", "Others"];
 const nationalityOptions = ["USA", "Canada", "India", "Indonesia", "Philippines", "Vietnam", "China", "Japan", "Germany", "France", "Other"];
-const languageOptions = ["English", "Spanish", "Mandarin", "Korean", "Japanese", "Vietnamese", "Indonesian", "Tagalog", "Other"];
+const languageOptions = ["English", "Spanish", "Mandarin", "Japanese", "Vietnamese", "Indonesian", "Tagalog", "Other"];
 const industryOptions = ["IT", "Education", "Healthcare", "Finance", "Hospitality", "Manufacturing", "Other"];
 
 const UserInfoForm = () => {
