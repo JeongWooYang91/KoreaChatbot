@@ -3,6 +3,18 @@ import { useUser } from "../context/UserContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const speak = (text, lang = "ko-KR") => {
+  const synth = window.speechSynthesis;
+  if (!synth) return;
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang;
+  utter.pitch = 1;
+  utter.rate = 1;
+  synth.cancel();  // Stop previous speech
+  synth.speak(utter);
+};
+
 const ChatbotPage = () => {
   const { selectedScenario } = useUser();
   const navigate = useNavigate();
@@ -12,6 +24,7 @@ const ChatbotPage = () => {
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
   const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -88,6 +101,11 @@ if (recognition) {
         messages: updatedMessages,
       });
 
+      const reply = res.data.reply;
+      setMessages([...updatedMessages, { role: "assistant", content: reply }]);
+      
+      if (ttsEnabled) speak(reply); // ✅ Read reply aloud
+
       setMessages([...updatedMessages, { role: "assistant", content: res.data.reply }]);
     } catch (err) {
       console.error("Chatbot error:", err);
@@ -141,6 +159,12 @@ if (recognition) {
   >
     {isListening ? "🎙️ 듣는 중..." : "🎤 말하기"}
   </button>
+  <button
+  className={`btn ${ttsEnabled ? "btn-outline-secondary" : "btn-warning"}`}
+  onClick={() => setTtsEnabled(!ttsEnabled)}
+>
+  {ttsEnabled ? "🔈 음성 끄기" : "🔇 음성 켜기"}
+</button>
 </div>
     </div>
   );
