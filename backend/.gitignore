@@ -1,0 +1,5 @@
+# 파이썬 임시 파일
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
