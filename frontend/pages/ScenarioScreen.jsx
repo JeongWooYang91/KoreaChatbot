@@ -16,7 +16,7 @@ const ScenarioScreen = () => {
     const fetchScenarios = async () => {
       try {
         setLoading(true);
-        const res = await axios.post("http://localhost:8000/scenarios", userInfo, {
+        const res = await axios.post("http://15.164.219.154/scenarios", userInfo, {
           headers: { "Content-Type": "application/json" }
         });
     

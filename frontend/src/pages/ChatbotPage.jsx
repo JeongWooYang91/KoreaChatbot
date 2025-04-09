@@ -125,7 +125,7 @@ const ChatbotPage = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:8000/chat", {
+      const res = await axios.post("http://15.164.219.154/chat", {
         messages: updatedMessages,
       });
 
